@@ -164,3 +164,61 @@ server.delete("/api/users/:id", (req, res) => {
 
 
 
+// ***********************************************************************
+//For PUT "/api/users/:id" 
+//Updates the user with the specified id using data from the request body. 
+//Returns the modified document, NOT the original.
+server.put("/api/users/:id", (req, res) => {
+  const id = req.params.id;
+  const userData = req.body; // express does not know how to parse JSON
+
+  // console.log("This is the PUT id:",id);
+  // console.log("This is the PUT body:",userData);
+
+  if(!userData.name||!userData.bio) {
+    res
+      .status(400)
+      .json({ errorMessage: "Please provide name and bio for the user." });
+  }
+  else {
+    db.update(id,userData)
+      .then(count=>{
+        // console.log("This is the return from update:",count);
+
+
+        if(count===0) {
+          res
+          .status(404)
+          .json({ message: "The user with the specified ID does not exist." });
+        }
+        else {
+          db.findById(id)
+            .then(userCheck=>{
+
+              if(userCheck) {
+                res.status(200).json(userCheck);
+              }
+              else {
+                res
+                .status(500)
+                .json({ error: "The user was modified in the database but could not be retrieved afterwards." });
+              }
+
+            })
+            .catch(error=>{
+              res
+              .status(500)
+              .json({ error: "The user was modified in the database but could not be retrieved afterwards." });
+            });
+        }
+
+
+      })
+      .catch(error=>{
+        console.log("error for update() on database", error);
+        res
+          .status(500)
+          .json({ error: "The user information could not be modified." });
+      });
+  }
+});
